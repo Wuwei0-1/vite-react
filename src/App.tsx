@@ -71,7 +71,7 @@ async function requestTranslation(text, aCode, bCode, expectedCode, source) {
   const A = byCode(aCode), B = byCode(bCode), E = byCode(expectedCode);
   const originNote =
     source === "voice"
-      ? `The transcript came from a speech recognizer configured for ${E.name}. If the speaker actually spoke the other language, words may be phonetically mangled — reconstruct the intended sen[...]`
+      ? `The transcript came from a speech recognizer configured for ${E.name}. If the speaker actually spoke the other language, words may be phonetically mangled — reconstruct the intended sentence.`
       : `The text was typed directly by the user.`;
 
   const prompt = `You are the translation engine inside a live two-way voice interpreter.
@@ -84,16 +84,21 @@ Input: """${text}"""
 Do this:
 1. Decide which of the two languages the input is in. "detected" must be exactly "${aCode}" or "${bCode}".
 2. Produce "cleaned": the corrected input in the detected language — fix recognition errors, restore punctuation and accents, keep the speaker's meaning and register.
-3. Produce "translation": a natural, conversational rendering of "cleaned" into the other language of the pair. Match tone (casual stays casual, formal stays formal). Translate meaning, not word-b[...]
+3. Produce "translation": a natural, conversational rendering of "cleaned" into the other language of the pair. Match tone (casual stays casual, formal stays formal). Translate meaning, not word-by-word.
 
 Respond with ONLY minified JSON, no markdown fences, no commentary:
 {"detected":"...","cleaned":"...","translation":"..."}`;
+
+  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing VITE_ANTHROPIC_API_KEY environment variable. Add it to your .env file.");
+  }
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
-      "x-api-key": "YOUR_ACTUAL_ANTHROPIC_API_KEY", // <-- Paste your real key here
+      "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true" 
     },
